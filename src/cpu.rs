@@ -229,9 +229,11 @@ impl Cpu {
             let pc = self.pc;
             // The Break and Push flags only exist in registers pushed to
             // the stack, never in the actual P register.
-            let mut p = self.p | Flag::Push as u8;
-            if let Interrupt::Break = kind {
+            let mut p = self.p | Flag::Push as u8 ;
+            if Interrupt::Break == kind {
                 p |= Flag::Break as u8;
+            } else {
+                p &= !(Flag::Break as u8);
             }
             self.push_word(pc);
             self.push_byte(p);

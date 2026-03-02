@@ -40,7 +40,7 @@ impl Mapper for Mapper0 {
                     .prg_ram
                     .write(Page::First(PageSize::EightKb), address - 0x6000, value)
             }
-            _ => panic!("bad address"),
+            _ => {},
         }
     }
 
