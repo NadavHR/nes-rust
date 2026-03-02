@@ -104,7 +104,7 @@ impl Bus {
                 self.controller_1.write_register(value);
             }
 
-            0x4018...0xFFFF => if let Some(ref c) = self.cartridge {
+            0x4018...0x7FFF => if let Some(ref c) = self.cartridge {
                 c.borrow_mut().write_prg_byte(address, value);
             },
             _ => (),
