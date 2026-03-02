@@ -11,6 +11,7 @@ pub struct DmcChannel {
     cartridge: Option<Rc<RefCell<Cartridge>>>,
     pub irq_enabled: bool,
     pub irq_flag: bool,
+    pub open_bus_value: u8,
     enabled: bool,
     output: u8,
     sample_address: u16,
@@ -43,6 +44,7 @@ impl DmcChannel {
             counter: 0,
             looping: false,
             cpu_stall_cycles: 0,
+            open_bus_value: 0,
         }
     }
 
@@ -111,9 +113,13 @@ impl DmcChannel {
             self.cpu_stall_cycles += 4;
             let a = self.current_address;
             self.shift_register = match self.cartridge {
-                Some(ref c) => c.borrow_mut().read_prg_byte(a),
+                Some(ref c) => match c.borrow_mut().read_prg_byte(a) {
+                    Ok(v) => v,
+                    Err(a) => self.open_bus_value,
+                },
                 None => 0,
             };
+            self.open_bus_value = self.shift_register;
             self.bit_count = 8;
             self.current_address = self.current_address.wrapping_add(1);
             if self.current_address == 0 {
@@ -147,6 +153,7 @@ impl DmcChannel {
         } else {
             self.counter -= 1;
         }
+
     }
 
     pub fn playing(&self) -> bool {

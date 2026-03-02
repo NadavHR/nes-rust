@@ -31,7 +31,7 @@ impl Cartridge {
     pub fn new(data: &[u8]) -> Self {
         let data = CartridgeData::new(data);
 
-        let mapper: Box<Mapper> = match data.header.mapper_number {
+        let mapper: Box<dyn Mapper> = match data.header.mapper_number {
             0 => Box::new(Mapper0::new(data)),
             1 => Box::new(Mapper1::new(data)),
             2 => Box::new(Mapper2::new(data)),
@@ -47,7 +47,7 @@ impl Cartridge {
         self.mapper.signal_scanline();
     }
 
-    pub fn read_prg_byte(&self, address: u16) -> u8 {
+    pub fn read_prg_byte(&self, address: u16) -> Result<u8, u16> {
         self.mapper.read_prg_byte(address)
     }
 
@@ -117,9 +117,9 @@ mod ppu_test {
         let cartridge = build_cartridge(false);
         for i in 0..0x8000u16 {
             if i % 2 == 0 {
-                assert_eq!(cartridge.read_prg_byte(0x8000 + i), ((i / 2) >> 8) as u8);
+                assert_eq!(cartridge.read_prg_byte(0x8000 + i), Ok(((i / 2) >> 8) as u8));
             } else {
-                assert_eq!(cartridge.read_prg_byte(0x8000 + i), (i / 2) as u8);
+                assert_eq!(cartridge.read_prg_byte(0x8000 + i), Ok((i / 2) as u8));
             }
         }
     }
@@ -129,7 +129,7 @@ mod ppu_test {
         let mut cartridge = build_cartridge(false);
         for i in 0x6000u16..0x7000u16 {
             cartridge.write_prg_byte(i, i as u8);
-            assert_eq!(cartridge.read_prg_byte(i), i as u8);
+            assert_eq!(cartridge.read_prg_byte(i), Ok(i as u8));
         }
     }
 

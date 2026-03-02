@@ -193,12 +193,12 @@ impl Mapper1 {
 }
 
 impl Mapper for Mapper1 {
-    fn read_prg_byte(&self, address: u16) -> u8 {
+    fn read_prg_byte(&self, address: u16) -> Result<u8, u16> {
         match address {
-            0x6000...0x7FFF => self.read_paged_prg_ram(address - 0x6000),
-            0x8000...0xBFFF => self.read_paged_prg_rom(AddressRange::Low, address - 0x8000),
-            0xC000...0xFFFF => self.read_paged_prg_rom(AddressRange::High, address - 0xC000),
-            _ => panic!("bad address"),
+            0x6000...0x7FFF => Ok(self.read_paged_prg_ram(address - 0x6000)),
+            0x8000...0xBFFF => Ok(self.read_paged_prg_rom(AddressRange::Low, address - 0x8000)),
+            0xC000...0xFFFF => Ok(self.read_paged_prg_rom(AddressRange::High, address - 0xC000)),
+            _ => Err(address),
         }
     }
 
@@ -348,7 +348,7 @@ mod test {
     fn test_prg_ram() {
         let mut mapper = Mapper1::new(build_cartridge_data());
         mapper.write_prg_byte(0x6001, 0xFA);
-        assert_eq!(mapper.read_prg_byte(0x6001), 0xFA);
+        assert_eq!(mapper.read_prg_byte(0x6001), Ok(0xFA));
     }
 
     #[test]
@@ -361,11 +361,11 @@ mod test {
 
         // Test the low addr range
         mapper.data.prg_rom.data[1] = 0xFC;
-        assert_eq!(mapper.read_prg_byte(0x8001), 0xFC);
+        assert_eq!(mapper.read_prg_byte(0x8001), Ok(0xFC));
 
         // Test the high addr range
         mapper.data.prg_rom.data[PageSize::SixteenKb as usize * 3 + 5] = 0xFB;
-        assert_eq!(mapper.read_prg_byte(0xC005), 0xFB);
+        assert_eq!(mapper.read_prg_byte(0xC005), Ok(0xFB));
     }
 
     #[test]

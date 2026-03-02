@@ -40,33 +40,33 @@ impl Mapper4 {
 }
 
 impl Mapper for Mapper4 {
-    fn read_prg_byte(&self, address: u16) -> u8 {
+    fn read_prg_byte(&self, address: u16) -> Result<u8, u16> {
         match (address, self.prg_mode) {
-            (0x6000...0x7FFF, _) => self.data
+            (0x6000...0x7FFF, _) => Ok(self.data
                 .prg_ram
-                .read(Page::First(PageSize::EightKb), address - 0x6000),
-            (0x8000...0x9FFF, false) => self.data.prg_rom.read(
+                .read(Page::First(PageSize::EightKb), address - 0x6000)),
+            (0x8000...0x9FFF, false) => Ok(self.data.prg_rom.read(
                 Page::Number(self.registers[6], PageSize::EightKb),
                 address - 0x8000,
-            ),
-            (0x8000...0x9FFF, true) => self.data
+            )),
+            (0x8000...0x9FFF, true) => Ok(self.data
                 .prg_rom
-                .read(Page::FromEnd(1, PageSize::EightKb), address - 0x8000),
-            (0xA000...0xBFFF, _) => self.data.prg_rom.read(
+                .read(Page::FromEnd(1, PageSize::EightKb), address - 0x8000)),
+            (0xA000...0xBFFF, _) => Ok(self.data.prg_rom.read(
                 Page::Number(self.registers[7], PageSize::EightKb),
                 address - 0xA000,
-            ),
-            (0xC000...0xDFFF, false) => self.data
+            )),
+            (0xC000...0xDFFF, false) => Ok(self.data
                 .prg_rom
-                .read(Page::FromEnd(1, PageSize::EightKb), address - 0xC000),
-            (0xC000...0xDFFF, true) => self.data.prg_rom.read(
+                .read(Page::FromEnd(1, PageSize::EightKb), address - 0xC000)),
+            (0xC000...0xDFFF, true) => Ok(self.data.prg_rom.read(
                 Page::Number(self.registers[6], PageSize::EightKb),
                 address - 0xC000,
-            ),
-            (0xE000...0xFFFF, _) => self.data
+            )),
+            (0xE000...0xFFFF, _) => Ok(self.data
                 .prg_rom
-                .read(Page::FromEnd(0, PageSize::EightKb), address - 0xE000),
-            (a, _m) => panic!("bad address: {:04X}", a),
+                .read(Page::FromEnd(0, PageSize::EightKb), address - 0xE000)),
+            (a, _m) => Err(a),
         }
     }
 

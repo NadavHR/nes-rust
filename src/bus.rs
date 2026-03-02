@@ -50,6 +50,7 @@ pub struct Bus {
     pub cycles: u64,
     pub nmi: Interrupt,
     pub draw: bool,
+    pub open_bus_value: u8,
     cpu_stall_cycles: usize,
 }
 
@@ -63,6 +64,7 @@ impl Bus {
             controller_1: Controller::new(),
             ram: [0; 2048],
             cycles: 0,
+            open_bus_value: 0,
             nmi: Interrupt::new(),
             draw: false, // add: mapper/cartridge
             cpu_stall_cycles: 0,
@@ -77,22 +79,28 @@ impl Bus {
 
     // unclocked_read_byte and unclocked_write_byte are unclocked memory access
     pub fn unclocked_read_byte(&mut self, address: u16) -> u8 {
-        match address {
+        let ret = match address {
             0...0x1FFF => self.ram[address as usize % 0x0800],
             0x2000...0x3FFF => self.ppu.read_register(address),
             0x4015 => self.apu.read_register(),
             0x4016 => self.controller_0.read_register(),
             0x4017 => self.controller_1.read_register(),
             0x4018...0xFFFF => if let Some(ref c) = self.cartridge {
-                c.borrow().read_prg_byte(address)
+                match c.borrow().read_prg_byte(address) {
+                    Ok(v) => v,
+                    Err(_) => self.open_bus_value,
+                }
             } else {
                 (address >> 8) as u8
             },
             address => (address >> 8) as u8,
-        }
+        };
+        self.open_bus_value = ret;
+        return ret;
     }
 
     fn unclocked_write_byte(&mut self, address: u16, value: u8) {
+        self.open_bus_value = value;
         match address {
             0...0x1FFF => self.ram[address as usize % 0x0800] = value,
             0x2000...0x3FFF => self.ppu.write_register(address, value),
