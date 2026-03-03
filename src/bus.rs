@@ -79,21 +79,21 @@ impl Bus {
 
     // unclocked_read_byte and unclocked_write_byte are unclocked memory access
     pub fn unclocked_read_byte(&mut self, address: u16) -> u8 {
+        let open_bus = self.open_bus_value;
         let ret = match address {
             0...0x1FFF => self.ram[address as usize % 0x0800],
             0x2000...0x3FFF => self.ppu.read_register(address),
             0x4015 => self.apu.read_register(),
             0x4016 => self.controller_0.read_register(),
             0x4017 => self.controller_1.read_register(),
-            0x4018...0xFFFF => if let Some(ref c) = self.cartridge {
+            _ => if let Some(ref c) = self.cartridge {
                 match c.borrow().read_prg_byte(address) {
                     Ok(v) => v,
-                    Err(_) => self.open_bus_value,
-                }
+                    Err(_) => open_bus,
+                } 
             } else {
-                (address >> 8) as u8
-            },
-            address => (address >> 8) as u8,
+                open_bus
+            }
         };
         self.open_bus_value = ret;
         return ret;
@@ -128,8 +128,12 @@ impl Bus {
     }
 
     pub fn read_byte<T: Into<u16>>(&mut self, address: T) -> u8 {
+        let address = address.into();
         self.tick();
-        self.unclocked_read_byte(address.into())
+        let byte = self.unclocked_read_byte(address);
+        // self.open_bus_value = byte;
+        self.open_bus_value = (address >> 8) as u8;
+        return byte;
     }
 
     pub fn write_byte<T: Into<u16>>(&mut self, address: T, value: u8) {
@@ -138,12 +142,23 @@ impl Bus {
     }
 
     pub fn read_noncontinuous_word<T: Into<u16>, U: Into<u16>>(&mut self, a: T, b: U) -> u16 {
-        (self.read_byte(a) as u16) | (self.read_byte(b) as u16) << 8
+        let a = a.into();
+        let b = b.into();
+        let low = self.read_byte(a) as u16;
+        if a & 0xFF00 != b & 0xFF00 {
+            // crossing a page boundary causes an extra read, but the high byte is fetched from the wrong address
+            let dummy_read_address = (a & 0xFF00) | (b & 0x00FF);
+            self.open_bus_value = self.read_byte(dummy_read_address);
+        }
+        let high = (self.read_byte(b) as u16) << 8;
+        high | low
     }
 
     pub fn read_word<T: Into<u16>>(&mut self, address: T) -> u16 {
         let address = address.into();
-        self.read_noncontinuous_word(address, address + 1)
+        let word = self.read_noncontinuous_word(address, address + 1);
+        self.open_bus_value = (word >> 8) as u8;
+        return  word;
     }
 
     pub fn tick(&mut self) {

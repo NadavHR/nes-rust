@@ -94,6 +94,7 @@ impl Cpu {
     }
 
     fn increment_pc(&mut self) {
+        // self.bus.open_bus_value = (self.pc >> 8) as u8;
         self.pc = self.pc.wrapping_add(1);
     }
 
@@ -160,8 +161,8 @@ impl Cpu {
             Mode::AbsoluteX => {
                 let base = self.next_word();
                 if cross(base, self.x) {
-                    self.bus.tick();
-                };
+                    self.bus.read_word(base);
+                }
                 offset(base, self.x)
             }
             Mode::AbsoluteXForceTick => {
@@ -567,7 +568,7 @@ impl Cpu {
 
             0x02 => println!("----------------PING----------------------"),
 
-            _ => panic!("unimplemented or illegal instruction: 0x{:X}", opcode),
+            _ => ()// panic!("unimplemented or illegal instruction: 0x{:X}", opcode),
         }
     }
 
