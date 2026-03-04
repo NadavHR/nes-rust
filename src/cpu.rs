@@ -94,21 +94,23 @@ impl Cpu {
     }
 
     fn increment_pc(&mut self) {
-        // self.bus.open_bus_value = (self.pc >> 8) as u8;
+        if cross(self.pc, 1) {
+            self.bus.dummy_read(self.pc,  self.pc.wrapping_add(1));
+        }
         self.pc = self.pc.wrapping_add(1);
+        
     }
 
     fn next_byte(&mut self) -> u8 {
-        let original_pc = self.pc;
+        let byte = self.bus.read_byte(self.pc);
         self.increment_pc();
-        self.bus.read_byte(original_pc)
+        byte
     }
 
     fn next_word(&mut self) -> u16 {
-        let original_pc = self.pc;
-        self.increment_pc();
-        self.increment_pc();
-        self.bus.read_word(original_pc)
+        let low = self.next_byte() as u16;
+        let high = self.next_byte() as u16;
+        low | (high << 8)
     }
 
     // Flags
@@ -214,7 +216,7 @@ impl Cpu {
             let pc = self.pc;
             // The Break and Push flags only exist in registers pushed to
             // the stack, never in the actual P register.
-            let mut p = self.p | Flag::Push as u8 ;
+            let mut p = self.p | Flag::Push as u8;
             if Interrupt::Break == kind {
                 p |= Flag::Break as u8;
             } else {
@@ -903,9 +905,8 @@ impl Cpu {
 
             let new_pc = self.pc.wrapping_add(offset);
 
-            // An extra tick for page crosses.
             if high_byte(self.pc) != high_byte(new_pc) {
-                self.bus.tick();
+                self.bus.dummy_read(self.pc, new_pc);
             }
 
             self.pc = new_pc;
@@ -1124,7 +1125,7 @@ impl Cpu {
 
     fn ahx(&mut self, mode: Mode) {
         let address = self.operand_address(mode);
-        let result = self.a & self.x & (address >> 8) as u8;
+        let result = self.a & self.x & ((address >> 8) as u8 + 1);
         self.bus.write_byte(address, result);
     }
 
