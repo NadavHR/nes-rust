@@ -158,51 +158,35 @@ impl Cpu {
                 low_byte(offset(self.next_byte(), self.y))
             }
             Mode::Absolute => self.next_word(),
-            Mode::AbsoluteX => {
+            Mode::AbsoluteX | Mode::AbsoluteXForceTick=> {
                 let base = self.next_word();
-                if cross(base, self.x) {
+                if mode == Mode::AbsoluteXForceTick || cross(base, self.x) {
                     self.bus.dummy_read(base, offset(base, self.x));
-                }
+                } 
                 offset(base, self.x)
             }
-            Mode::AbsoluteXForceTick => {
-                self.bus.tick();
-                offset(self.next_word(), self.x)
-            }
-            Mode::AbsoluteY => {
+            Mode::AbsoluteY | Mode::AbsoluteYForceTick => {
                 let base = self.next_word();
-                if cross(base, self.y) {
+                if mode == Mode::AbsoluteYForceTick || cross(base, self.y) {
                     self.bus.dummy_read(base, offset(base, self.y));
                 }
                 offset(base, self.y)
             }
-            Mode::AbsoluteYForceTick => {
-                self.bus.tick();
-                offset(self.next_word(), self.y)
-            }
             Mode::Indirect => {
                 let i = self.next_word();
-                self.bus
-                    .read_noncontinuous_word(i, high_byte(i) | low_byte(i + 1))
+                self.bus.read_noncontinuous_word(i, high_byte(i) | low_byte(i + 1))
             }
             Mode::IndirectX => {
                 self.bus.tick();
                 let i = offset(self.next_byte(), self.x);
-                self.bus
-                    .read_noncontinuous_word(low_byte(i), low_byte(i + 1))
+                self.bus.read_noncontinuous_word(low_byte(i), low_byte(i + 1))
             }
-            Mode::IndirectY => {
+            Mode::IndirectY | Mode::IndirectYForceTick => {
                 let i = self.next_byte();
                 let base = self.bus.read_noncontinuous_word(i, low_byte(i + 1));
-                if cross(base, self.y) {
-                    self.bus.tick();
+                if mode == Mode::IndirectYForceTick || cross(base, self.y) {
+                    self.bus.dummy_read(base, offset(base, self.y));
                 }
-                offset(base, self.y)
-            }
-            Mode::IndirectYForceTick => {
-                let i = self.next_byte();
-                let base = self.bus.read_noncontinuous_word(i, low_byte(i + 1));
-                self.bus.tick();
                 offset(base, self.y)
             }
             Mode::NoMode => panic!("Mode::NoMode should never be used to read from memory"),

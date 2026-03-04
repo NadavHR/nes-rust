@@ -133,8 +133,8 @@ impl Bus {
         return byte;
     }
 
-    pub fn dummy_read(&mut self, address_1: u16, address_2: u16) {
-        self.open_bus_value = self.read_byte((address_1 & 0xFF00) | (address_2 & 0x00FF));
+    pub fn dummy_read(&mut self, a: u16, b: u16) {
+        self.open_bus_value = self.read_byte((a & 0xFF00) | (b & 0x00FF));
     }
 
     pub fn write_byte<T: Into<u16>>(&mut self, address: T, value: u8) {
