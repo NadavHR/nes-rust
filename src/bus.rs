@@ -79,22 +79,27 @@ impl Bus {
 
     // unclocked_read_byte and unclocked_write_byte are unclocked memory access
     pub fn unclocked_read_byte(&mut self, address: u16) -> u8 {
+        let open_bus = self.open_bus_value;
+        // self.open_bus_value = (address >> 8) as u8;
         let ret = match address {
             0..=0x1FFF => self.ram[address as usize % 0x0800],
             0x2000..=0x3FFF => self.ppu.read_register(address),
-            0x4015 => self.apu.read_register(),
-            0x4016 => self.controller_0.read_register(),
-            0x4017 => self.controller_1.read_register(),
+            0x4015 => {
+                self.open_bus_value = open_bus;
+                (self.apu.read_register() & 0b1101_1111) | (open_bus & 0b0010_0000)
+            },
+            0x4016 => self.controller_0.read_register() | (open_bus & 0b1110_0000),
+            0x4017 => self.controller_1.read_register() | (open_bus & 0b1110_0000),
             _ => if let Some(ref c) = self.cartridge {
                 match c.borrow().read_prg_byte(address) {
                     Ok(v) => v,
-                    Err(_) => self.open_bus_value,
+                    Err(_) => open_bus,
                 } 
             } else {
-                self.open_bus_value
+                open_bus
             }
         };
-        self.open_bus_value = (address >> 8) as u8;
+        self.open_bus_value = ret;
         return ret;
     }
 
@@ -133,7 +138,11 @@ impl Bus {
     }
 
     pub fn dummy_read(&mut self, a: u16, b: u16) {
-        self.open_bus_value = self.read_byte((a & 0xFF00) | (b & 0x00FF));
+        let open_bus = self.open_bus_value;
+        let dummy_byte = self.read_byte((a & 0xFF00) | (b & 0x00FF));
+        // if dummy_byte == ((a & 0xFF00) >> 8) as u8{
+        //     self.open_bus_value = open_bus;
+        // }
     }
 
     pub fn write_byte<T: Into<u16>>(&mut self, address: T, value: u8) {
@@ -144,12 +153,12 @@ impl Bus {
     pub fn read_noncontinuous_word<T: Into<u16>, U: Into<u16>>(&mut self, a: T, b: U) -> u16 {
         let a = a.into();
         let b = b.into();
-        if a & 0xFF00 != b & 0xFF00 {
+        if (a & 0xFF00) != (b & 0xFF00) {
             // crossing a page boundary causes a dummy read, but the high byte is fetched from the wrong address
             self.dummy_read(a, b);
         }
         let low = self.read_byte(a) as u16;
-        let high = self.read_byte(b) ;
+        let high = self.read_byte(b);
         self.open_bus_value = high;
         ((high as u16) << 8) | low
     }

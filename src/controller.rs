@@ -34,7 +34,7 @@ impl Controller {
 
     pub fn read_register(&mut self) -> u8 {
         let v = if self.cursor < 8 {
-            self.button_states >> self.cursor & 1
+            self.button_states >> self.cursor
         } else {
             1
         };
@@ -43,7 +43,7 @@ impl Controller {
             self.cursor += 1;
         }
 
-        0x40 | v
+        (0x40 | v) & 0b0001_1111
     }
 
     pub fn set_button_state(&mut self, button: Button, pressed: bool) {

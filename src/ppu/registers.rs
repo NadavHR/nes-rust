@@ -70,14 +70,14 @@ impl Registers {
         let result = match address % 8 {
             0 => self.open_bus,
             1 => self.open_bus,
-            2 => self.read_status() | (self.open_bus & 0b11111),
+            2 => (self.read_status() & 0b1110_0000) | (self.open_bus & 0b0001_1111),
             3 => self.open_bus,
             4 => self.read_oam_data(),
             5 => self.open_bus,
             6 => self.open_bus,
             7 => {
                 if let 0x3f00..=0x3fff = self.v_address.address() {
-                    self.read_data() | (self.open_bus & 0b1100_0000)
+                    (self.read_data() & 0b0011_1111) | (self.open_bus & 0b1100_0000)
                 } else {
                     self.read_data()
                 }
@@ -115,6 +115,7 @@ impl Registers {
     }
 
     pub fn write_oam_data(&mut self, value: u8) {
+        self.open_bus = value;
         self.oam_ram[self.oam_address as usize] = value;
         self.oam_address = self.oam_address.wrapping_add(1);
     }
