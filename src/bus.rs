@@ -79,7 +79,6 @@ impl Bus {
 
     // unclocked_read_byte and unclocked_write_byte are unclocked memory access
     pub fn unclocked_read_byte(&mut self, address: u16) -> u8 {
-        let open_bus = self.open_bus_value;
         let ret = match address {
             0...0x1FFF => self.ram[address as usize % 0x0800],
             0x2000...0x3FFF => self.ppu.read_register(address),
