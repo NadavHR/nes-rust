@@ -161,7 +161,7 @@ impl Cpu {
             Mode::AbsoluteX => {
                 let base = self.next_word();
                 if cross(base, self.x) {
-                    self.bus.read_word(base);
+                    self.bus.dummy_read(base, offset(base, self.x));
                 }
                 offset(base, self.x)
             }
@@ -172,7 +172,7 @@ impl Cpu {
             Mode::AbsoluteY => {
                 let base = self.next_word();
                 if cross(base, self.y) {
-                    self.bus.tick();
+                    self.bus.dummy_read(base, offset(base, self.y));
                 }
                 offset(base, self.y)
             }
