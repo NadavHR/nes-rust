@@ -76,7 +76,7 @@ impl Registers {
             5 => self.open_bus,
             6 => self.open_bus,
             7 => {
-                if let 0x3f00...0x3fff = self.v_address.address() {
+                if let 0x3f00..=0x3fff = self.v_address.address() {
                     self.read_data() | (self.open_bus & 0b1100_0000)
                 } else {
                     self.read_data()

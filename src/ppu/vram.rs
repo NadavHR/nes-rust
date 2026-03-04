@@ -43,12 +43,12 @@ impl Vram {
     pub fn write_byte(&mut self, address: u16, value: u8) {
         let mirroring = self.mirroring();
         match address {
-            0x0000...0x1FFF => match self.cartridge {
+            0x0000..=0x1FFF => match self.cartridge {
                 Some(ref c) => c.borrow_mut().write_chr_byte(address, value),
                 None => panic!("tried to write to non-existant cartridge memory"),
             },
-            0x2000...0x3EFF => self.nametables[mirror_nametable(mirroring, address)] = value,
-            0x3F00...0x3FFF => self.palettes[mirror_palette(address)] = value,
+            0x2000..=0x3EFF => self.nametables[mirror_nametable(mirroring, address)] = value,
+            0x3F00..=0x3FFF => self.palettes[mirror_palette(address)] = value,
             _ => (),
         };
     }
@@ -56,12 +56,12 @@ impl Vram {
     pub fn read_byte(&mut self, address: u16) -> u8 {
         let mirroring = self.mirroring();
         match address {
-            0x0000...0x1FFF => match self.cartridge {
+            0x0000..=0x1FFF => match self.cartridge {
                 Some(ref c) => c.borrow().read_chr_byte(address),
                 None => panic!("tried to read non-existant cartridge memory"),
             },
-            0x2000...0x3EFF => self.nametables[mirror_nametable(mirroring, address)],
-            0x3F00...0x3FFF => self.palettes[mirror_palette(address)],
+            0x2000..=0x3EFF => self.nametables[mirror_nametable(mirroring, address)],
+            0x3F00..=0x3FFF => self.palettes[mirror_palette(address)],
             _ => 0,
         }
     }

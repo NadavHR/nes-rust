@@ -62,7 +62,7 @@ impl Renderer {
 
     pub fn tick(&mut self, registers: &mut Registers) -> PpuResult {
         let mut r = match (self.scanline, self.dot) {
-            (0...239, _) => {
+            (0..=239, _) => {
                 self.tick_sprites(false, registers);
                 self.tick_pixel(registers);
                 self.tick_background(false, registers);
@@ -120,7 +120,7 @@ impl Renderer {
 
     fn tick_pixel(&mut self, registers: &mut Registers) {
         match self.dot {
-            2...257 | 322...337 => {
+            2..=257 | 322..=337 => {
                 let x = self.dot - 2;
                 let y = self.scanline;
                 if let Some(color) = self.render_pixel(x, y, registers) {
@@ -134,7 +134,7 @@ impl Renderer {
 
     fn tick_background(&mut self, pre: bool, registers: &mut Registers) {
         match self.dot {
-            2...255 | 322...337 => match self.dot % 8 {
+            2..=255 | 322..=337 => match self.dot % 8 {
                 1 => {
                     self.scratch_address = registers.v_address.nametable_address();
                     self.reload_shift_registers();
@@ -185,7 +185,7 @@ impl Renderer {
                     registers.v_address.copy_x(registers.t_address);
                 }
             }
-            280...304 => if pre {
+            280..=304 => if pre {
                 if registers.mask.rendering() {
                     registers.v_address.copy_y(registers.t_address);
                 }

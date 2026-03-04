@@ -24,11 +24,11 @@ impl Mapper2 {
 impl Mapper for Mapper2 {
     fn read_prg_byte(&self, address: u16) -> Result<u8, u16> {
         match address {
-            0x8000...0xBFFF => Ok(self.data.prg_rom.read(
+            0x8000..=0xBFFF => Ok(self.data.prg_rom.read(
                 Page::Number(self.prg_0, PageSize::SixteenKb),
                 address - 0x8000,
             )),
-            0xC000...0xFFFF => Ok(self.data
+            0xC000..=0xFFFF => Ok(self.data
                 .prg_rom
                 .read(Page::Last(PageSize::SixteenKb), address - 0xC000)),
             a => Err(a),
@@ -37,7 +37,7 @@ impl Mapper for Mapper2 {
 
     fn write_prg_byte(&mut self, address: u16, value: u8) {
         match address {
-            0x8000...0xFFFF => {
+            0x8000..=0xFFFF => {
                 self.prg_0 = value as usize & 0x0F;
             }
             _ => panic!("bad address"),

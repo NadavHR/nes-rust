@@ -80,8 +80,8 @@ impl Bus {
     // unclocked_read_byte and unclocked_write_byte are unclocked memory access
     pub fn unclocked_read_byte(&mut self, address: u16) -> u8 {
         let ret = match address {
-            0...0x1FFF => self.ram[address as usize % 0x0800],
-            0x2000...0x3FFF => self.ppu.read_register(address),
+            0..=0x1FFF => self.ram[address as usize % 0x0800],
+            0x2000..=0x3FFF => self.ppu.read_register(address),
             0x4015 => self.apu.read_register(),
             0x4016 => self.controller_0.read_register(),
             0x4017 => self.controller_1.read_register(),
@@ -101,9 +101,9 @@ impl Bus {
     fn unclocked_write_byte(&mut self, address: u16, value: u8) {
         self.open_bus_value = value;
         match address {
-            0...0x1FFF => self.ram[address as usize % 0x0800] = value,
-            0x2000...0x3FFF => self.ppu.write_register(address, value),
-            0x4000...0x4013 | 0x4015 => self.apu.write_register(address, value, self.cycles),
+            0..=0x1FFF => self.ram[address as usize % 0x0800] = value,
+            0x2000..=0x3FFF => self.ppu.write_register(address, value),
+            0x4000..=0x4013 | 0x4015 => self.apu.write_register(address, value, self.cycles),
             0x4017 => self.apu.write_register(address, value, self.cycles),
             0x4014 => self.oam_dma(value as u16),
             0x4016 => {
@@ -111,7 +111,7 @@ impl Bus {
                 self.controller_1.write_register(value);
             }
 
-            0x4018...0x7FFF => if let Some(ref c) = self.cartridge {
+            0x4018..=0x7FFF => if let Some(ref c) = self.cartridge {
                 c.borrow_mut().write_prg_byte(address, value);
             },
             _ => (),

@@ -20,13 +20,13 @@ impl Mapper0 {
 impl Mapper for Mapper0 {
     fn read_prg_byte(&self, address: u16) -> Result<u8, u16> {
         return match address {
-            0x6000...0x7FFF => Ok(self.data
+            0x6000..=0x7FFF => Ok(self.data
                 .prg_ram
                 .read(Page::First(PageSize::EightKb), address - 0x6000)),
-            0x8000...0xBFFF => Ok(self.data
+            0x8000..=0xBFFF => Ok(self.data
                 .prg_rom
                 .read(Page::First(PageSize::SixteenKb), address - 0x8000)),
-            0xC000...0xFFFF => Ok(self.data
+            0xC000..=0xFFFF => Ok(self.data
                 .prg_rom
                 .read(Page::Last(PageSize::SixteenKb), address - 0xC000)),
             address => Err(address),
@@ -35,7 +35,7 @@ impl Mapper for Mapper0 {
 
     fn write_prg_byte(&mut self, address: u16, value: u8) {
         match address {
-            0x6000...0x7FFF => {
+            0x6000..=0x7FFF => {
                 self.data
                     .prg_ram
                     .write(Page::First(PageSize::EightKb), address - 0x6000, value)
