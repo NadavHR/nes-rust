@@ -268,6 +268,7 @@ impl Cpu {
         #[cfg(feature = "log")]
         self.log_next_instruction();
 
+        self.bus.address_not_in_bus = true;
         let instruction = self.next_byte();
         self.execute_instruction(instruction);
     }
@@ -958,10 +959,10 @@ impl Cpu {
     }
 
     fn jsr(&mut self) {
-        let target_address = self.operand_address(Mode::Absolute);
-        let return_address = self.pc - 1;
-        self.bus.tick();
+        let return_address = self.pc + 1;
         self.push_word(return_address);
+        let target_address = self.operand_address(Mode::Absolute);
+        self.bus.tick();
         self.pc = target_address;
     }
 

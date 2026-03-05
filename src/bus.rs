@@ -51,6 +51,7 @@ pub struct Bus {
     pub nmi: Interrupt,
     pub draw: bool,
     pub open_bus_value: u8,
+    pub address_not_in_bus: bool,
     cpu_stall_cycles: usize,
 }
 
@@ -68,6 +69,7 @@ impl Bus {
             nmi: Interrupt::new(),
             draw: false, // add: mapper/cartridge
             cpu_stall_cycles: 0,
+            address_not_in_bus: false
         }
     }
 
@@ -79,23 +81,27 @@ impl Bus {
 
     // unclocked_read_byte and unclocked_write_byte are unclocked memory access
     pub fn unclocked_read_byte(&mut self, address: u16) -> u8 {
-        let open_bus = self.open_bus_value;
+        if !self.address_not_in_bus {
+            self.open_bus_value = (address >> 8) as u8;
+        } else {
+            self.address_not_in_bus = false;
+        }
         let ret = match address {
             0..=0x1FFF => self.ram[address as usize % 0x0800],
             0x2000..=0x3FFF => self.ppu.read_register(address),
             0x4015 => {
-                self.open_bus_value = open_bus;
-                (self.apu.read_register() & 0b1101_1111) | (open_bus & 0b0010_0000)
+                self.open_bus_value = self.open_bus_value;
+                (self.apu.read_register() & 0b1101_1111) | (self.open_bus_value & 0b0010_0000)
             },
-            0x4016 => self.controller_0.read_register() | (open_bus & 0b1110_0000),
-            0x4017 => self.controller_1.read_register() | (open_bus & 0b1110_0000),
+            0x4016 => self.controller_0.read_register() | (self.open_bus_value & 0b1110_0000),
+            0x4017 => self.controller_1.read_register() | (self.open_bus_value & 0b1110_0000),
             _ => if let Some(ref c) = self.cartridge {
                 match c.borrow().read_prg_byte(address) {
                     Ok(v) => v,
-                    Err(_) => open_bus,
+                    Err(_) => self.open_bus_value,
                 } 
             } else {
-                open_bus
+                self.open_bus_value
             }
         };
         self.open_bus_value = ret;
@@ -104,6 +110,7 @@ impl Bus {
 
     fn unclocked_write_byte(&mut self, address: u16, value: u8) {
         self.open_bus_value = value;
+        self.address_not_in_bus = false;
         match address {
             0..=0x1FFF => self.ram[address as usize % 0x0800] = value,
             0x2000..=0x3FFF => self.ppu.write_register(address, value),
@@ -137,11 +144,8 @@ impl Bus {
     }
 
     pub fn dummy_read(&mut self, a: u16, b: u16) {
-        let open_bus = self.open_bus_value;
-        let dummy_byte = self.read_byte((a & 0xFF00) | (b & 0x00FF));
-        // if dummy_byte == ((a & 0xFF00) >> 8) as u8{
-        //     self.open_bus_value = open_bus;
-        // }
+        self.read_byte((a & 0xFF00) | (b & 0x00FF));
+        self.address_not_in_bus = true;
     }
 
     pub fn write_byte<T: Into<u16>>(&mut self, address: T, value: u8) {
