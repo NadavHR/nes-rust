@@ -91,7 +91,7 @@ impl Bus {
             0..=0x1FFF => self.ram[address as usize % 0x0800],
             0x2000..=0x3FFF => self.ppu.read_register(address),
             0x4015 => {
-                self.apu.read_register() & 0b0111_1111
+                (self.apu.read_register() & 0b0101_1111) | (self.open_bus_value & 0b0010_0000)
             },
             0x4016 => self.controller_0.read_register() | (self.open_bus_value & 0b1110_0000),
             0x4017 => self.controller_1.read_register() | (self.open_bus_value & 0b1110_0000),
