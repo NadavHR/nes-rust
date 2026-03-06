@@ -94,14 +94,12 @@ impl Cpu {
     }
 
     fn increment_pc(&mut self) {
-        if cross(self.pc, 1) {
-            self.bus.dummy_read(self.pc,  self.pc.wrapping_add(1));
-        }
         self.pc = self.pc.wrapping_add(1);
         
     }
 
     fn next_byte(&mut self) -> u8 {
+        self.bus.address_not_in_bus = true;
         let byte = self.bus.read_byte(self.pc);
         self.increment_pc();
         byte
@@ -268,7 +266,6 @@ impl Cpu {
         #[cfg(feature = "log")]
         self.log_next_instruction();
 
-        self.bus.address_not_in_bus = true;
         let instruction = self.next_byte();
         self.execute_instruction(instruction);
     }
