@@ -66,6 +66,10 @@ impl Registers {
         }
     }
 
+    pub fn dummy_write_2006(&mut self) {
+        self.write_register(0x2006, self.open_bus);
+    }
+
     pub fn read_register(&mut self, address: u16) -> u8 {
         let result = match address % 8 {
             0 => self.open_bus,

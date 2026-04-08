@@ -51,6 +51,10 @@ impl Ppu {
     pub fn read_register(&mut self, address: u16) -> u8 {
         self.registers.read_register(address)
     }
+
+    pub fn dummy_write_2006(&mut self) {
+        self.registers.dummy_write_2006();
+    }
 }
 
 fn nth_bit<T: Into<u16>, U: Into<u16>>(x: T, n: U) -> u8 {

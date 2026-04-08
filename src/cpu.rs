@@ -140,6 +140,13 @@ impl Cpu {
         self.p & (Flag::Carry as u8)
     }
 
+
+    fn rmw_dummy_checks(&mut self, address: u16) {
+        if address == 0x2006 {
+            self.bus.ppu.dummy_write_2006();
+        }
+    }
+
     // Assumes that the PC is on the first byte after the opcode
     fn operand_address(&mut self, mode: Mode) -> u16 {
         match mode {
@@ -675,6 +682,7 @@ impl Cpu {
         self.set_flag(Flag::Carry, operand & 0b10000000 != 0);
         self.bus.tick();
         self.set_flags_zero_negative(result);
+        self.rmw_dummy_checks(address);
         self.bus.write_byte(address, result);
         result
     }
@@ -699,6 +707,7 @@ impl Cpu {
         self.set_flag(Flag::Carry, operand & 1 != 0);
         self.bus.tick();
         self.set_flags_zero_negative(result);
+        self.rmw_dummy_checks(address);
         self.bus.write_byte(address, result);
         result
     }
@@ -723,6 +732,7 @@ impl Cpu {
         self.set_flag(Flag::Carry, operand & 0b10000000 != 0);
         self.bus.tick();
         self.set_flags_zero_negative(result);
+        self.rmw_dummy_checks(address);
         self.bus.write_byte(address, result);
         result
     }
@@ -747,6 +757,7 @@ impl Cpu {
         self.set_flag(Flag::Carry, operand & 1 != 0);
         self.bus.tick();
         self.set_flags_zero_negative(result);
+        self.rmw_dummy_checks(address);
         self.bus.write_byte(address, result);
         result
     }
@@ -770,6 +781,7 @@ impl Cpu {
         let result = operand.wrapping_add(1);
         self.bus.tick();
         self.set_flags_zero_negative(result);
+        self.rmw_dummy_checks(address);
         self.bus.write_byte(address, result);
         result
     }
@@ -784,6 +796,7 @@ impl Cpu {
         let result = operand.wrapping_sub(1);
         self.bus.tick();
         self.set_flags_zero_negative(result);
+        self.rmw_dummy_checks(address);
         self.bus.write_byte(address, result);
         result
     }
