@@ -78,6 +78,7 @@ impl Renderer {
             (241, 1) => {
                 if !registers.vblank_suppress {
                     registers.status.set_vblank(true);
+                    registers.status.set_sprite_overflow(false);
                     if registers.control.nmi_on_vblank() {
                         PpuResult::Nmi
                     } else {
@@ -108,7 +109,6 @@ impl Renderer {
             1 => {
                 self.secondary_oam.clear();
                 if pre {
-                    registers.status.set_sprite_overflow(false);
                     registers.status.set_sprite_zero_hit(false);
                 }
             }
