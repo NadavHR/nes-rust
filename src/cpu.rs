@@ -1,5 +1,5 @@
 use bus::Bus;
-use std::fmt::Write;
+use std::{fmt::Write, result};
 
 use cpu_debug::{INSTRUCTION_NAMES, INSTRUCTION_SIZES};
 
@@ -1136,8 +1136,13 @@ impl Cpu {
 
     fn ahx(&mut self, mode: Mode) {
         let address = self.operand_address(mode);
-        let result = self.a & self.x & ((address >> 8) as u8 + 1);
-        self.bus.write_byte(address, result);
+        let unindexed_address = address - (self.y as u16);
+        let result = self.a & self.x & ((unindexed_address >> 8) as u8 + 1);
+        if high_byte(unindexed_address) != high_byte(address) { // page cross
+            self.bus.write_byte(low_byte(address) | ((result as u16) << 8), result);
+        } else {
+            self.bus.write_byte(address, result);
+        }
     }
 
     fn shx(&mut self) {
